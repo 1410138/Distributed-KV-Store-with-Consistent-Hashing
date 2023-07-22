@@ -8,7 +8,7 @@
 using namespace std;
 
 map<string,int>heartbeat_count;
-bool data_migration=false;		// global variable to check if data_migration is in progress and to pause other requests 
+pthread_rwlock_t rwlock;	// global rwlock to check if data_migration is in progress and to pause other requests 
 
 struct thread_struct
 {
