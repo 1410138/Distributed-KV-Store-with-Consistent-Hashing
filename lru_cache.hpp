@@ -4,6 +4,7 @@
 #include<iostream>
 #include<string>
 #include<unordered_map>
+#include<mutex>
 using namespace std;
 
 class ListNode {
@@ -22,6 +23,7 @@ private:
     ListNode* head=new ListNode;
     ListNode* tail=new ListNode;
     int capacity;
+	mutex mtx;
 
  	void pushToHead(ListNode* node)
 	{
@@ -55,6 +57,7 @@ public:
 
 	void display()
 	{
+		lock_guard<mutex> lock(mtx);
 		ListNode *cur=head->next;
 		while(cur->next!=NULL)
 		{
@@ -65,6 +68,7 @@ public:
 
  	void put_in_cache(string key,string value)
  	{
+		lock_guard<mutex> lock(mtx);
     	if(memo.count(key))
     	{
         	memo[key]->value=value;
@@ -87,6 +91,7 @@ public:
 
   	string get_from_cache(string key)
   	{
+		lock_guard<mutex> lock(mtx);
     	if(memo.count(key))
     	{
         	moveToHead(memo[key]);
@@ -100,6 +105,7 @@ public:
 
 	void delete_from_cache(string key)
 	{	
+		lock_guard<mutex> lock(mtx);
   		if(memo.count(key))
   		{
 	      	ListNode* del=memo[key];
