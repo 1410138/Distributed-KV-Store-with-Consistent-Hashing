@@ -67,7 +67,8 @@ void* timer(void* threadargs)
         {
    	        if(it->second==0)
    	        {
-                data_migration=true;                
+                // write lock
+		        pthread_rwlock_wrlock(&rwlock);          
                 cout<<"slave server "<<it->first<<" is migrating "<<endl;   
    	  	        int hash_key;
    	  	        hash_key=consistent_hash(it->first);
@@ -108,6 +109,8 @@ void* timer(void* threadargs)
 
                 send_message(sock_fd,inform_leader_migration("leader",pre->ip_plus_port,ar1,ar2));
                 cout<<receive_message(sock_fd)<<endl; //msg recvd from leader(succ) SS: "migration_completed"  
+                // write unlock
+		        pthread_rwlock_unlock(&rwlock);
        	    }
         }
 
@@ -118,7 +121,6 @@ void* timer(void* threadargs)
         {
             heartbeat_count[x.first]=0;
         }
-        data_migration=false;
     }  
 }
 
@@ -656,10 +658,8 @@ void request_of_client(int connectfd,string ip_port_cs)
         if(s.empty())
             return;
         cout<<"req received from client"<<s<<endl;
-        
-        // dont do anything if migration;
-        while(data_migration==true);
-
+        // read lock
+		pthread_rwlock_rdlock(&rwlock);
         if(document1.Parse(s.c_str()).HasParseError())
         {
     	   cout<<"error in request for client parsing string"<<endl;
@@ -712,6 +712,9 @@ void request_of_client(int connectfd,string ip_port_cs)
         av.inorder(root); 
         cout<<"------------------------------------------------------------------------------------------"<<endl;  
 
+        // read unlock
+		pthread_rwlock_unlock(&rwlock);
+        
         cout<<"------------------------------------Cache-------------------------------------------------"<<endl;  
         cache.display();
         cout<<"------------------------------------------------------------------------------------------"<<endl;
