@@ -36,6 +36,8 @@ void* serve_requests(void* threadargs)
     {
        	cout<<"a slave server"<<endl;
        	assert(document.IsObject());
+		// write lock
+		pthread_rwlock_wrlock(&rwlock);
        	// when there is only one slave server
        	if(root == NULL)
        	{
@@ -45,13 +47,17 @@ void* serve_requests(void* threadargs)
 	   	else
        	{
        		// send message migration_new_server when more than one server in system
-       		data_migration=true;
        		new_reg_migration(connectfd,ip_port);
-       		data_migration=false;
        	}
+		// write unlock
+		pthread_rwlock_unlock(&rwlock); 
 	   	cout<<"-------------------------------------AVL--------------------------------------------------"<<endl; 
+		// read lock
+		pthread_rwlock_rdlock(&rwlock);
        	avltree av;
        	av.inorder(root); 
+		// read unlock
+		pthread_rwlock_unlock(&rwlock);
        	cout<<"------------------------------------------------------------------------------------------"<<endl;  
        	cout<<"registered"<<endl;
 	}
@@ -110,6 +116,7 @@ int main(int argc,char **argv)
 		char* ipclient=new char[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET,&(ip_client.sin_addr),ipclient,INET_ADDRSTRLEN);
 		th->ip_plus_port=string(ipclient)+":"+to_string(ntohs(ip_client.sin_port));
+		delete[] ipclient;
 		cout<<th->ip_plus_port<<endl;
 		th->ip_port_CS=ip+":"+port;
 		pthread_create(&tid,NULL,serve_requests,(void*)th);
